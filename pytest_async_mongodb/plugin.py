@@ -3,6 +3,7 @@ import os
 import functools
 import json
 import codecs
+import types
 
 import mongomock
 import pytest
@@ -32,7 +33,7 @@ def pytest_addoption(parser):
 
 
 def wrapper(func):
-    @wraps(func)
+    @functools.wraps(func)
     async def wrapped(*args, **kwargs):
         coro_func = asyncio.coroutine(func)
         return await coro_func(*args, **kwargs)
@@ -55,10 +56,30 @@ class AsyncCollection(AsyncClassMethod, mongomock.Collection):
     ASYNC_METHODS = [
         'find_one',
         'find',
+        'count',
     ]
 
+    async def find_one(self, filter=None, *args, **kwargs):
+        import collections
+        # Allow calling find_one with a non-dict argument that gets used as
+        # the id for the query.
+        if filter is None:
+            filter = {}
+        if not isinstance(filter, collections.Mapping):
+            filter = {'_id': filter}
 
-class AsyncDatabase(mongomock.Database):
+        cursor = await self.find(filter, *args, **kwargs)
+        try:
+            return next(cursor)
+        except StopIteration:
+            return None
+
+
+class AsyncDatabase(AsyncClassMethod, mongomock.Database):
+
+    ASYNC_METHODS = [
+        'collection_names'
+    ]
 
     def get_collection(self, name, codec_options=None, read_preference=None,
                        write_concern=None):
@@ -68,11 +89,7 @@ class AsyncDatabase(mongomock.Database):
         return collection
 
 
-class AsyncMockMongoClient(AsyncClassMethod, mongomock.MongoClient):
-
-    ASYNC_METHODS = [
-        'collection_names'
-    ]
+class AsyncMockMongoClient(mongomock.MongoClient):
 
     def get_database(self, name, codec_options=None, read_preference=None,
                      write_concern=None):
@@ -83,16 +100,17 @@ class AsyncMockMongoClient(AsyncClassMethod, mongomock.MongoClient):
 
 
 @pytest.fixture(scope='function')
-def async_mongodb(pytestconfig):
+async def async_mongodb(pytestconfig):
     client = AsyncMockMongoClient()
     db = client['pytest']
-    clean_database(db)
+    await clean_database(db)
     load_fixtures(db, pytestconfig)
     return db
 
 
-def clean_database(db):
-    for name in db.collection_names(include_system_collections=False):
+async def clean_database(db):
+    collections = await db.collection_names(include_system_collections=False)
+    for name in collections:
         db.drop_collection(name)
 
 
