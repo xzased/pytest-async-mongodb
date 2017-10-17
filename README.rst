@@ -1,11 +1,11 @@
 What is this?
 =============
 
-This is a pytest_ plugin based on pytest-mongodb and mongomock that enables you
+This is a pytest plugin based on pytest-mongodb_ and mongomock_ that enables you
 to test your code that relies on a callback- or Future-based API for non-blocking access
 to a MongoDB and expects certain data to be present.
 It allows you to specify fixtures for database collections in JSON/BSON or YAML
-format. Under the hood we use the mongomock_ library, that you should
+format. Under the hood we use the mongomock library, that you should
 consult for documentation on how to use MongoDB mock objects. If suitable you
 can also use a real MongoDB server.
 
@@ -66,8 +66,6 @@ You get ahold of the database in your test-function by using the ``async_mongodb
 like so:
 
 .. code-block:: python
-    import pytest
-
 
     @pytest.mark.asyncio
     async def test_players(async_mongodb):
@@ -76,3 +74,7 @@ like so:
 
 
 For further information refer to the mongomock_ documentation.
+
+.. _mongomock: https://github.com/vmalloc/mongomock
+.. _pytest: https://docs.pytest.org/en/latest/
+.. _pytest-mongodb: https://github.com/mdomke/pytest-mongodb/
