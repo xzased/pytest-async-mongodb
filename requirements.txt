@@ -1,0 +1,4 @@
+mongomock
+pyyaml
+pytest-asyncio
+pytest>=2.5.2
