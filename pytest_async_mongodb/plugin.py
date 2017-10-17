@@ -44,7 +44,7 @@ class AsyncClassMethod(object):
     ASYNC_METHODS = []
 
     def __getattribute__(self, name):
-        attr = super(AsyncCollection, self).__getattribute__(name)
+        attr = super(AsyncClassMethod, self).__getattribute__(name)
         if type(attr) == types.MethodType and name in self.ASYNC_METHODS:
             attr = wrapper(attr)
         return attr
