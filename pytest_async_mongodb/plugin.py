@@ -137,6 +137,15 @@ async def async_mongodb(pytestconfig):
     return db
 
 
+@pytest.fixture(scope='function')
+async def async_mongodb_client(pytestconfig):
+    client = AsyncMockMongoClient()
+    db = client['pytest']
+    await clean_database(db)
+    await load_fixtures(db, pytestconfig)
+    return client
+
+
 async def clean_database(db):
     collections = await db.collection_names(include_system_collections=False)
     for name in collections:
