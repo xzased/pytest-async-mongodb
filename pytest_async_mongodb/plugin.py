@@ -61,9 +61,27 @@ class Session:
 class AsyncCollection(AsyncClassMethod, mongomock.Collection):
 
     ASYNC_METHODS = [
-        'find_one',
         'find',
+        'find_one',
+        'find_one_and_delete',
+        'find_one_and_replace',
+        'find_one_and_update',
+        'find_and_modify',
+        'save',
+        'delete_one',
+        'delete_many',
         'count',
+        'insert_one',
+        'insert_many',
+        'update_one',
+        'update_many',
+        'replace_one',
+        'count_documents',
+        'estimated_document_count',
+        'drop',
+        'create_index',
+        'ensure_index',
+        'map_reduce',
     ]
 
     async def find_one(self, filter=None, *args, **kwargs):
