@@ -50,14 +50,6 @@ class AsyncClassMethod(object):
         return attr
 
 
-class Session:
-    async def __aenter__(self):
-        await asyncio.sleep(0)
-
-    async def __aexit__(self, exc_type, exc, tb):
-        await asyncio.sleep(0)
-
-
 class AsyncCollection(AsyncClassMethod, mongomock.Collection):
 
     ASYNC_METHODS = [
@@ -99,10 +91,6 @@ class AsyncCollection(AsyncClassMethod, mongomock.Collection):
         except StopIteration:
             return None
 
-    async def start_session(self, **kwargs):
-        await asyncio.sleep(0)
-        return Session()
-
 
 class AsyncDatabase(AsyncClassMethod, mongomock.Database):
 
@@ -118,6 +106,14 @@ class AsyncDatabase(AsyncClassMethod, mongomock.Database):
         return collection
 
 
+class Session:
+    async def __aenter__(self):
+        await asyncio.sleep(0)
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await asyncio.sleep(0)
+
+
 class AsyncMockMongoClient(mongomock.MongoClient):
 
     def get_database(self, name, codec_options=None, read_preference=None,
@@ -126,6 +122,10 @@ class AsyncMockMongoClient(mongomock.MongoClient):
         if db is None:
             db = self._databases[name] = AsyncDatabase(self, name)
         return db
+
+    async def start_session(self, **kwargs):
+        await asyncio.sleep(0)
+        return Session()
 
 
 @pytest.fixture(scope='function')
