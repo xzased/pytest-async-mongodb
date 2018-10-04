@@ -133,7 +133,7 @@ async def async_mongodb(pytestconfig):
     client = AsyncMockMongoClient()
     db = client['pytest']
     await clean_database(db)
-    load_fixtures(db, pytestconfig)
+    await load_fixtures(db, pytestconfig)
     return db
 
 
@@ -143,7 +143,7 @@ async def clean_database(db):
         db.drop_collection(name)
 
 
-def load_fixtures(db, config):
+async def load_fixtures(db, config):
     option_dir = config.getoption('async_mongodb_fixture_dir')
     ini_dir = config.getini('async_mongodb_fixture_dir')
     fixtures = config.getini('async_mongodb_fixtures')
@@ -156,10 +156,10 @@ def load_fixtures(db, config):
         selected = fixtures and collection in fixtures
         if selected and supported:
             path = os.path.join(basedir, file_name)
-            load_fixture(db, collection, path, file_format)
+            await load_fixture(db, collection, path, file_format)
 
 
-def load_fixture(db, collection, path, file_format):
+async def load_fixture(db, collection, path, file_format):
     if file_format == 'json':
         loader = functools.partial(json.load, object_hook=json_util.object_hook)
     elif file_format == 'yaml':
@@ -173,4 +173,4 @@ def load_fixture(db, collection, path, file_format):
             _cache[path] = docs = loader(fp)
 
     for document in docs:
-        db[collection].insert(document)
+        await db[collection].insert_one(document)
