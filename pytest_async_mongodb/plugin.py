@@ -31,7 +31,6 @@ def pytest_addoption(parser):
         help='Try loading fixtures from this directory')
 
 
-
 def wrapper(func):
     @functools.wraps(func)
     async def wrapped(*args, **kwargs):
@@ -49,6 +48,14 @@ class AsyncClassMethod(object):
         if type(attr) == types.MethodType and name in self.ASYNC_METHODS:
             attr = wrapper(attr)
         return attr
+
+
+class Session:
+    async def __aenter__(self):
+        await asyncio.sleep(0)
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await asyncio.sleep(0)
 
 
 class AsyncCollection(AsyncClassMethod, mongomock.Collection):
@@ -73,6 +80,10 @@ class AsyncCollection(AsyncClassMethod, mongomock.Collection):
             return next(cursor)
         except StopIteration:
             return None
+
+    async def start_session(self, **kwargs):
+        await asyncio.sleep(0)
+        return Session()
 
 
 class AsyncDatabase(AsyncClassMethod, mongomock.Database):
