@@ -14,7 +14,7 @@ async def test_load(async_mongodb):
 
 @pytest.mark.asyncio
 async def check_players(players):
-    count = await players.count()
+    count = await players.count_documents({})
     assert count == 2
     await check_keys_in_docs(players, ['name', 'surname', 'position'])
     manuel = await players.find_one({'name': 'Manuel'})
@@ -24,7 +24,7 @@ async def check_players(players):
 
 @pytest.mark.asyncio
 async def check_championships(championships):
-    count = await championships.count()
+    count = await championships.count_documents({})
     assert count == 3
     await check_keys_in_docs(championships, ['year', 'host', 'winner'])
 
@@ -39,12 +39,12 @@ async def check_keys_in_docs(collection, keys):
 
 @pytest.mark.asyncio
 async def test_insert(async_mongodb):
-    async_mongodb.players.insert({
+    await async_mongodb.players.insert_one({
         'name': 'Bastian',
         'surname': 'Schweinsteiger',
         'position': 'midfield'
     })
-    count = await async_mongodb.players.count()
+    count = await async_mongodb.players.count_documents({})
     bastian = await async_mongodb.players.find_one({'name': 'Bastian'})
     assert count == 3
     assert bastian.get('name') == 'Bastian'

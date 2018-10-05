@@ -31,7 +31,6 @@ def pytest_addoption(parser):
         help='Try loading fixtures from this directory')
 
 
-
 def wrapper(func):
     @functools.wraps(func)
     async def wrapped(*args, **kwargs):
@@ -54,9 +53,27 @@ class AsyncClassMethod(object):
 class AsyncCollection(AsyncClassMethod, mongomock.Collection):
 
     ASYNC_METHODS = [
-        'find_one',
         'find',
+        'find_one',
+        'find_one_and_delete',
+        'find_one_and_replace',
+        'find_one_and_update',
+        'find_and_modify',
+        'save',
+        'delete_one',
+        'delete_many',
         'count',
+        'insert_one',
+        'insert_many',
+        'update_one',
+        'update_many',
+        'replace_one',
+        'count_documents',
+        'estimated_document_count',
+        'drop',
+        'create_index',
+        'ensure_index',
+        'map_reduce',
     ]
 
     async def find_one(self, filter=None, *args, **kwargs):
@@ -89,6 +106,14 @@ class AsyncDatabase(AsyncClassMethod, mongomock.Database):
         return collection
 
 
+class Session:
+    async def __aenter__(self):
+        await asyncio.sleep(0)
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await asyncio.sleep(0)
+
+
 class AsyncMockMongoClient(mongomock.MongoClient):
 
     def get_database(self, name, codec_options=None, read_preference=None,
@@ -98,14 +123,27 @@ class AsyncMockMongoClient(mongomock.MongoClient):
             db = self._databases[name] = AsyncDatabase(self, name)
         return db
 
+    async def start_session(self, **kwargs):
+        await asyncio.sleep(0)
+        return Session()
+
 
 @pytest.fixture(scope='function')
 async def async_mongodb(pytestconfig):
     client = AsyncMockMongoClient()
     db = client['pytest']
     await clean_database(db)
-    load_fixtures(db, pytestconfig)
+    await load_fixtures(db, pytestconfig)
     return db
+
+
+@pytest.fixture(scope='function')
+async def async_mongodb_client(pytestconfig):
+    client = AsyncMockMongoClient()
+    db = client['pytest']
+    await clean_database(db)
+    await load_fixtures(db, pytestconfig)
+    return client
 
 
 async def clean_database(db):
@@ -114,7 +152,7 @@ async def clean_database(db):
         db.drop_collection(name)
 
 
-def load_fixtures(db, config):
+async def load_fixtures(db, config):
     option_dir = config.getoption('async_mongodb_fixture_dir')
     ini_dir = config.getini('async_mongodb_fixture_dir')
     fixtures = config.getini('async_mongodb_fixtures')
@@ -127,10 +165,10 @@ def load_fixtures(db, config):
         selected = fixtures and collection in fixtures
         if selected and supported:
             path = os.path.join(basedir, file_name)
-            load_fixture(db, collection, path, file_format)
+            await load_fixture(db, collection, path, file_format)
 
 
-def load_fixture(db, collection, path, file_format):
+async def load_fixture(db, collection, path, file_format):
     if file_format == 'json':
         loader = functools.partial(json.load, object_hook=json_util.object_hook)
     elif file_format == 'yaml':
@@ -144,4 +182,4 @@ def load_fixture(db, collection, path, file_format):
             _cache[path] = docs = loader(fp)
 
     for document in docs:
-        db[collection].insert(document)
+        await db[collection].insert_one(document)
